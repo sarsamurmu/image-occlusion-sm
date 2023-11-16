@@ -228,6 +228,12 @@ class ImgOccEdit(QDialog):
         image_btn.setIconSize(QSize(16, 16))
         image_btn.setAutoDefault(False)
 
+        auto_oc_btn = QPushButton(_("Auto Occlude"))
+        auto_oc_btn.clicked.connect(self.autoOcclude)
+        #auto_oc_btn.setIcon(QIcon(os.path.join(ICONS_PATH, "add.png")))
+        #auto_oc_btn.setIconSize(QSize(16, 16))
+        auto_oc_btn.setAutoDefault(False)
+
         self.occl_tp_select = QComboBox()
         self.occl_tp_select.addItem(_("Don't Change"), "Don't Change")
         self.occl_tp_select.addItem(_("Hide All, Guess One"), "Hide All, Guess One")
@@ -281,6 +287,7 @@ class ImgOccEdit(QDialog):
 
         for btn in [
             image_btn,
+            auto_oc_btn,
             self.edit_btn,
             self.new_btn,
             self.ao_btn,
@@ -307,7 +314,8 @@ class ImgOccEdit(QDialog):
         bottom_hbox = QHBoxLayout()
         bottom_hbox.setContentsMargins(10, 0, 10, 10)
         bottom_hbox.addWidget(image_btn)
-        bottom_hbox.insertStretch(1, stretch=1)
+        bottom_hbox.addWidget(auto_oc_btn)
+        bottom_hbox.insertStretch(2, stretch=1)
         bottom_hbox.addWidget(self.bottom_label)
         bottom_hbox.addWidget(self.occl_tp_select)
         bottom_hbox.addWidget(button_box)
@@ -387,6 +395,10 @@ class ImgOccEdit(QDialog):
         self.imgoccadd.onChangeImage()
         self.fitImageCanvas()
         self.fitImageCanvas(delay=100)
+
+    def autoOcclude(self):
+        """Some"""
+        self.imgoccadd.onAutoOcclude()
 
     def defaultAction(self, close):
         if self.mode == "add":

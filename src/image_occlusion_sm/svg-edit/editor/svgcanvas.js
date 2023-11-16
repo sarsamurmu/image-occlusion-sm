@@ -7920,8 +7920,8 @@ var changeSelectedAttribute = this.changeSelectedAttribute = function(attr, val,
 // Function: deleteSelectedElements
 // Removes all selected elements from the DOM and adds the change to the 
 // history stack
-this.deleteSelectedElements = function() {
-	var batchCmd = new BatchCommand("Delete Elements");
+this.deleteSelectedElements = function(cmd) {
+	var batchCmd = cmd ? cmd : new BatchCommand("Delete Elements");
 	var len = selectedElements.length;
 	var selectedCopy = []; //selectedElements is being deleted
 	for (var i = 0; i < len; ++i) {
@@ -7949,7 +7949,7 @@ this.deleteSelectedElements = function() {
 		selectedElements[i] = null;
 		batchCmd.addSubCommand(new RemoveElementCommand(elem, nextSibling, parent));
 	}
-	if (!batchCmd.isEmpty()) addCommandToHistory(batchCmd);
+	if (!cmd && !batchCmd.isEmpty()) addCommandToHistory(batchCmd);
 	call("changed", selectedCopy);
 	clearSelection();
 };
@@ -8110,6 +8110,70 @@ this.groupSelectedElements = function(type) {
 	// update selection
 	selectOnly([g], true);
 };
+
+this.combineSelectedElements = function () {
+	var bbox = getStrokedBBox(selectedElements)
+	
+	var batchCmd = new BatchCommand("Combine boxes");
+
+	var rect = addSvgElementFromJson({
+		element: "rect",
+		attr: {
+			id: getNextId(),
+			height: bbox.height,
+			width: bbox.width,
+			x: bbox.x,
+			y: bbox.y,
+			stroke: "#2D2D2D",
+			fill: "#FFEBA2"
+		}
+	})
+
+	batchCmd.addSubCommand(new InsertElementCommand(rect));
+
+	canvas.deleteSelectedElements(batchCmd)
+
+	addCommandToHistory(batchCmd)
+
+	selectOnly([rect])
+};
+
+this.stretchElements = function(dir) {
+	var batchCmd = new BatchCommand("Stretch boxes")
+	var bbox = getStrokedBBox(selectedElements)
+	if (dir === 'right') {
+		var rightEnd = bbox.x + bbox.width
+		var i = selectedElements.length;
+		while (i--) {
+			var elem = selectedElements[i];
+			if (elem == null || elem.tagName != 'rect') continue;
+
+			var x = +elem.getAttribute('x')
+			var newWidth = rightEnd - x;
+			batchCmd.addSubCommand(new ChangeElementCommand(elem, { "width": elem.getAttribute('width') }));
+			elem.setAttribute('width', newWidth);
+			selectorManager.requestSelector(elem).resize();
+		}
+	} else {
+		var leftEnd = bbox.x;
+		var i = selectedElements.length;
+		while (i--) {
+			var elem = selectedElements[i];
+			if (elem == null || elem.tagName != 'rect') continue;
+
+			var x = +elem.getAttribute('x')
+			var rightEnd = x + (+elem.getAttribute('width'))
+			batchCmd.addSubCommand(new ChangeElementCommand(elem, {
+				"width": elem.getAttribute('width'),
+				"x": x
+			}));
+			elem.setAttribute('x', leftEnd);
+			elem.setAttribute('width', Math.abs(rightEnd - leftEnd));
+			selectorManager.requestSelector(elem).resize();
+		}
+	}
+	addCommandToHistory(batchCmd)
+}
 
 
 // Function: pushGroupProperties

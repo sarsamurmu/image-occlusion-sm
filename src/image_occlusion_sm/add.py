@@ -34,8 +34,12 @@
 Add notes.
 """
 
+import json
 import os
 import tempfile
+
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 
 from anki.config import Config
 from aqt import mw
@@ -288,6 +292,48 @@ class ImgOccAdd(object):
         # Workaround for window intermittently spawning below AddCards on 2.1.50+:
         dialog.activateWindow()
         dialog.setWindowState(Qt.WindowState.WindowActive)
+
+    def onAutoOcclude(self):
+        """Automatically occlude images"""
+        print(self.image_path)
+        url = 'http://localhost:27030'
+        post_fields = {'image': self.image_path}
+
+        request = Request(url, urlencode(post_fields).encode())
+        with urlopen(request) as response:
+            jsonStr = response.read().decode()
+        img_data = json.loads(jsonStr)
+        rects = img_data["rects"]
+        dimen = img_data["dim"]
+        rectSvgs = []
+        i = 1
+
+        for rect in rects:
+            height = rect[1][1] - rect[0][1]
+            width = rect[1][0] - rect[0][0]
+            print(rect, height, width)
+            rectSvgs.append(f'<rect id="svg_{i}" height="{height}" width="{width}" y="{rect[0][1]}" x="{rect[0][0]}" stroke="#2D2D2D" fill="#FFEBA2"/>')
+            i += 1
+
+        joinStr = "\n  "
+        svg = f"""
+        <svg width="{dimen[0]}" height="{dimen[1]}" xmlns="http://www.w3.org/2000/svg">
+        <!-- Created with Image Occlusion Enhanced -->
+        <g>
+        <title>Labels</title>
+        </g>
+        <g>
+        <title>Masks</title>
+        {joinStr.join(rectSvgs)}
+        </g>
+        </svg>
+        """
+        self.imgoccedit.svg_edit.eval(
+            f"""
+            svgCanvas.setSvgString({json.dumps(svg)});
+            svgCanvas.zoomChanged('', 'canvas');
+            """
+        )
 
     def onChangeImage(self):
         """Change canvas background image"""

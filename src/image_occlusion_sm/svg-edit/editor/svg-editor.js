@@ -406,6 +406,7 @@
 					'#tool_topath':'to_path',
 					'#tool_node_link':'link_controls',
 					'#tool_reorient':'reorient',
+					'#tool_combine':'combine',
 					'#tool_group':'group',
 					'#tool_ungroup':'ungroup',
 					'#tool_unlink_use':'unlink_use',
@@ -1705,14 +1706,15 @@
 					}
 					menu_items[(el_name === 'g' ? 'en':'dis') + 'ableContextMenuItems']('#ungroup');
 					menu_items[((el_name === 'g' || !multiselected) ? 'dis':'en') + 'ableContextMenuItems']('#group');
+					menu_items[((el_name === 'g' || !multiselected) ? 'dis' : 'en') + 'ableContextMenuItems']('#combine');
 				} // if (elem != null)
 				else if (multiselected) {
 					$('#multiselected_panel').show();
 					menu_items
-						.enableContextMenuItems('#group')
+						.enableContextMenuItems('#combine,#stretchleft,#stretchright,#group')
 						.disableContextMenuItems('#ungroup');
 				} else {
-					menu_items.disableContextMenuItems('#delete,#cut,#copy,#group,#ungroup,#move_front,#move_up,#move_down,#move_back');
+					menu_items.disableContextMenuItems('#delete,#cut,#copy,#combine,#stretchleft,#stretchright,#group,#ungroup,#move_front,#move_up,#move_down,#move_back');
 				}
 
 				// update history buttons
@@ -2688,6 +2690,12 @@
 					populateLayers();
 				}
 			};
+
+			var clickCombine = function(){
+				if (multiselected) {
+					svgCanvas.combineSelectedElements();
+				}
+			}
 
 			var clickGroup = function(){
 				// group
@@ -4051,6 +4059,7 @@
 					{sel:'#tool_undo', fn: clickUndo, evt: 'click', key: [modKey+'z', true]},
 					{sel:'#tool_redo', fn: clickRedo, evt: 'click', key: [modKey+'y', true]},
 					{sel:'#tool_clone,#tool_clone_multi', fn: clickClone, evt: 'click', key: ['D', true]},
+					{sel:'#tool_combine', fn: clickCombine, evt: 'click', key: ['C', true] },
 					{sel:'#tool_group', fn: clickGroup, evt: 'click', key: ['G', true]},
 					{sel:'#tool_ungroup', fn: clickGroup, evt: 'click'},
 					{sel:'#tool_unlink_use', fn: clickGroup, evt: 'click'},
@@ -4318,6 +4327,15 @@
 							break;
 						case 'paste_in_place':
 							svgCanvas.pasteElements('in_place');
+							break;
+						case 'combine':
+							svgCanvas.combineSelectedElements();
+							break;
+						case 'stretchleft':
+							svgCanvas.stretchElements('left');
+							break;
+						case 'stretchright':
+							svgCanvas.stretchElements('right');
 							break;
 						case 'group':
 							svgCanvas.groupSelectedElements();
